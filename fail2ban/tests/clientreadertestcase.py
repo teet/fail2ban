@@ -315,7 +315,8 @@ class FilterReaderTest(unittest.TestCase):
 		# is unreliable
 		self.assertEqual(sorted(filterReader.convert()), sorted(output))
 
-		filterReader = FilterReader("testcase01", "testcase01", {'maxlines': "5"},
+		filterReader = FilterReader(
+			"testcase01", "testcase01", {'maxlines': "5"},
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		#filterReader.getOptions(["failregex", "ignoreregex"])
@@ -325,7 +326,8 @@ class FilterReaderTest(unittest.TestCase):
 
 	def testFilterReaderSubstitionDefault(self):
 		output = [['set', 'jailname', 'addfailregex', 'to=sweet@example.com fromip=<IP>']]
-		filterReader = FilterReader('substition', "jailname", {},
+		filterReader = FilterReader(
+			'substition', "jailname", {},
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		filterReader.getOptions(None)
@@ -334,7 +336,8 @@ class FilterReaderTest(unittest.TestCase):
 
 	def testFilterReaderSubstitionSet(self):
 		output = [['set', 'jailname', 'addfailregex', 'to=sour@example.com fromip=<IP>']]
-		filterReader = FilterReader('substition', "jailname", {'honeypot': 'sour@example.com'},
+		filterReader = FilterReader(
+			'substition', "jailname", {'honeypot': 'sour@example.com'},
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		filterReader.getOptions(None)
@@ -345,7 +348,8 @@ class FilterReaderTest(unittest.TestCase):
 		output = [['set', 'jailname', 'addfailregex', 'to=test,sweet@example.com,test2,sweet@example.com fromip=<IP>']]
 		filterName, filterOpt = JailReader.extractOptions(
 			'substition[honeypot="<sweet>,<known/honeypot>", sweet="test,<known/honeypot>,test2"]')
-		filterReader = FilterReader('substition', "jailname", filterOpt,
+		filterReader = FilterReader(
+			'substition', "jailname", filterOpt,
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		filterReader.getOptions(None)
@@ -354,13 +358,15 @@ class FilterReaderTest(unittest.TestCase):
 
 	def testFilterReaderSubstitionFail(self):
 		# directly subst the same var :
-		filterReader = FilterReader('substition', "jailname", {'honeypot': '<honeypot>'},
+		filterReader = FilterReader(
+			'substition', "jailname", {'honeypot': '<honeypot>'},
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		filterReader.getOptions(None)
 		self.assertRaises(ValueError, FilterReader.convert, filterReader)
 		# cross subst the same var :
-		filterReader = FilterReader('substition', "jailname", {'honeypot': '<sweet>', 'sweet': '<honeypot>'},
+		filterReader = FilterReader(
+			'substition', "jailname", {'honeypot': '<sweet>', 'sweet': '<honeypot>'},
 		  share_config=self.__share_cfg, basedir=TEST_FILES_DIR)
 		filterReader.read()
 		filterReader.getOptions(None)
@@ -534,7 +540,8 @@ class JailsReaderTest(LogCaptureTestCase):
 				self.assertTrue(len(filterName))
 				# moreover we must have a file for it
 				# and it must be readable as a Filter
-				filterReader = FilterReader(filterName, jail, filterOpt, 
+				filterReader = FilterReader(
+					filterName, jail, filterOpt, 
 					share_config=self.__share_cfg, basedir=CONFIG_DIR)
 				self.assertTrue(filterReader.read(),"Failed to read filter:" + filterName)		  # opens fine
 				filterReader.getOptions({})	  # reads fine

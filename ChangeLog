@@ -9,6 +9,11 @@ Fail2Ban: Changelog
 ver. 0.9.4 (2015/XX/XXX) - wanna-be-released
 -----------
 
+- IMPORTANT incompatible changes:
+   * filter `apache-badbots` was replaced with `http-badbots`, so the local
+   configuration possibly specified in apache-badbots.local will be ignored
+   and does not apply to jail apache-badbots.
+
 - Fixes:
    * roundcube-auth jail typo for logpath
    * Fix dnsToIp resolver for fqdn with large list of IPs (gh-1164)
@@ -28,11 +33,11 @@ ver. 0.9.4 (2015/XX/XXX) - wanna-be-released
 - New Features:
    * New interpolation feature for definition config readers - `<known/parameter>`
      (means last known init definition of filters or actions with name `parameter`).
-     This interpolation makes possible to extend a parameters of stock filter or 
+     This interpolation makes possible to extend parameters of a stock filter or an
      action directly in jail inside jail.local file, without creating a separately
      filter.d/*.local file.
-     As extension to interpolation `%(known/parameter)s`, that does not works for
-     filter and action init parameters
+     It could be considered an extension to interpolation `%(known/parameter)s`, 
+     that does not work for filter and action init parameters
    * New filters:
      - openhab - domotic software authentication failure with the
        rest api and web interface (gh-1223)
