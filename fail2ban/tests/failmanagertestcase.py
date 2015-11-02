@@ -84,6 +84,30 @@ class AddFailure(unittest.TestCase):
 		self.__failManager.cleanup(timestamp)
 		self.assertEqual(self.__failManager.size(), 2)
 	
+	def testFailuresMemLeak(self):
+		unittest.F2B.SkipIfFast()
+		import gc
+		gc.collect()
+		timestamp = 1167606999.0
+		i2 = i3 = i4 = 0
+		for i in xrange(0, 100000):
+			i4 += 1
+			if i4 > 255:
+				i4 = 0
+				i3 += 1
+				if i3 > 255:
+					i3 = 0
+					i2 += 1
+					if i2 > 255:
+						i2 = 0
+			t = FailTicket('127.%d.%d.%d' % (i2, i3, i4), 1167605999.0, dict({'match': i}))
+			self.__failManager.addFailure(t)
+			if i % 5000 == 0:
+				self.__failManager.cleanup(timestamp)
+		self.__failManager.cleanup(timestamp)
+		self.assertEqual(self.__failManager.size(), 0)
+		self.assertFalse(gc.collect())
+
 	def testbanOK(self):
 		self.__failManager.setMaxRetry(5)
 		#ticket = FailTicket('193.168.0.128', None)
