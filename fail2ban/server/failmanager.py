@@ -29,7 +29,7 @@ import logging
 
 from .faildata import FailData
 from .ticket import FailTicket
-from ..helpers import getLogger
+from ..helpers import getLogger, BgService
 
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
@@ -43,6 +43,7 @@ class FailManager:
 		self.__maxRetry = 3
 		self.__maxTime = 600
 		self.__failTotal = 0
+		self.__bgSvc = BgService()
 	
 	def setFailTotal(self, value):
 		try:
@@ -118,6 +119,7 @@ class FailManager:
 							 % (self.__failTotal, len(self.__failList), failures_summary))
 		finally:
 			self.__lock.release()
+			self.__bgSvc.service()
 	
 	def size(self):
 		try:
@@ -135,6 +137,7 @@ class FailManager:
 					self.__delFailure(item)
 		finally:
 			self.__lock.release()
+			self.__bgSvc.service()
 	
 	def __delFailure(self, ip):
 		if ip in self.__failList:
@@ -154,6 +157,7 @@ class FailManager:
 			raise FailManagerEmpty
 		finally:
 			self.__lock.release()
+			self.__bgSvc.service()
 
 
 class FailManagerEmpty(Exception):

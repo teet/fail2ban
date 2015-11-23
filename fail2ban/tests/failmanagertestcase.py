@@ -120,3 +120,14 @@ class AddFailure(unittest.TestCase):
 		ticket = self.__failManager.toBan()
 		self.assertNotEqual(ticket.getIP(), "100.100.10.10")
 		self.assertRaises(FailManagerEmpty, self.__failManager.toBan)
+
+	def testBgService(self):
+		bgSvc = self.__failManager._FailManager__bgSvc
+		failManager2nd = FailManager()
+		# test singleton (same object):
+		bgSvc2 = failManager2nd._FailManager__bgSvc
+		self.assertTrue(id(bgSvc) == id(bgSvc2))
+		# test service :
+		bgSvc.service()
+		self.assertFalse(bgSvc2.service())
+
