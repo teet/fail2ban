@@ -29,38 +29,55 @@ import re
 import sys
 from ..helpers import getLogger
 
-if sys.version_info >= (3,2): # pragma: no cover
+if sys.version_info >= (3,2):
 
 	# SafeConfigParser deprecated from Python 3.2 (renamed to ConfigParser)
 	from configparser import ConfigParser as SafeConfigParser, \
-		BasicInterpolation
+		BasicInterpolation, InterpolationMissingOptionError
 
 	# And interpolation of __name__ was simply removed, thus we need to
 	# decorate default interpolator to handle it
 	class BasicInterpolationWithName(BasicInterpolation):
-		"""Decorator to bring __name__ interpolation back.
-
-		Original handling of __name__ was removed because of
-		functional deficiencies: http://bugs.python.org/issue10489
-
-		commit v3.2a4-105-g61f2761
-		Author: Lukasz Langa <lukasz@langa.pl>
-		Date:	Sun Nov 21 13:41:35 2010 +0000
-
-		Issue #10489: removed broken `__name__` support from configparser
-
-		But should be fine to reincarnate for our use case
+		"""Decorator for default known/param, and to bring __name__ interpolation back.
 		"""
 		def _interpolate_some(self, parser, option, accum, rest, section, map,
 							  depth):
+			# restore 
 			if section and not (__name__ in map):
-				map = map.copy()		  # just to be safe
 				map['__name__'] = section
-			return super(BasicInterpolationWithName, self)._interpolate_some(
-				parser, option, accum, rest, section, map, depth)
+			while True:
+				try:
+					return super(BasicInterpolationWithName, self)._interpolate_some(
+						parser, option, accum, rest, section, map, depth)
+				except InterpolationMissingOptionError, e:
+					# replacement was not found, if 'known/param' - search it in default without known prefix:
+					key = e.args[3]
+					if not key.startswith('known/'):
+						raise e
+					val = parser.get_defaults().get(key[6:])
+					if val is None:
+						raise e
+					rest = rest.replace('%(' + key + ')s', val)
+					depth += 1
 
-else: # pragma: no cover
-	from ConfigParser import SafeConfigParser
+else:
+	from ConfigParser import SafeConfigParser, InterpolationMissingOptionError
+
+	def _basic_interpolate_some(self, option, accum, rest, section, map, depth):
+		while True:
+			try:
+				return SafeConfigParser._interpolate_some(self,
+					option, accum, rest, section, map, depth)
+			except InterpolationMissingOptionError, e:
+				# replacement was not found, if 'known/param' - search it in default without known prefix:
+				key = e.args[3]
+				if not key.startswith('known/'):
+					raise e
+				val = self._defaults.get(key[6:])
+				if val is None:
+					raise e
+				rest = rest.replace('%(' + key + ')s', val)
+				depth += 1
 
 # Gets the instance of the logger.
 logSys = getLogger(__name__)
@@ -200,6 +217,10 @@ after = 1.conf
 	def get_sections(self):
 		return self._sections
 
+	# override basic interpolation of ConfigParser
+	if sys.version_info < (3,2):
+		_interpolate_some = _basic_interpolate_some
+
 	def read(self, filenames, get_includes=True):
 		if not isinstance(filenames, list):
 			filenames = [ filenames ]
@@ -228,7 +249,6 @@ after = 1.conf
 					# merge defaults and all sections to self:
 					alld.update(cfg.get_defaults())
 					for n, s in cfg.get_sections().iteritems():
-						curalls = alls
 						# conditional sections
 						cond = SafeConfigParserWithIncludes.CONDITIONAL_RE.match(n)
 						if cond:

@@ -998,37 +998,36 @@ class ServerConfigReaderTests(LogCaptureTestCase):
 		self.assertTrue(IPAddr('192.0.2.1').isIPv4)
 		self.assertTrue(IPAddr('2001:DB8::').isIPv6)
 
-	def _testExecActions(self, server):
-		jails = server._Server__jails
-		for jail in jails:
-			# print(jail, jails[jail])
-			for a in jails[jail].actions:
-				action = jails[jail].actions[a]
-				logSys.debug('# ' + ('=' * 50))
-				logSys.debug('# == %-44s ==', jail + ' - ' + action._name)
-				logSys.debug('# ' + ('=' * 50))
-				# we can currently test only command actions:
-				if not isinstance(action, _actions.CommandAction): continue
-				# wrap default command processor, just log if (heavy)debug:
-				action.executeCmd = self._executeCmd
-				# test start :
-				logSys.debug('# === start ==='); self.pruneLog()
-				action.start()
-				# test ban ip4 :
-				logSys.debug('# === ban-ipv4 ==='); self.pruneLog()
-				action.ban({'ip': IPAddr('192.0.2.1')})
-				# test unban ip4 :
-				logSys.debug('# === unban ipv4 ==='); self.pruneLog()
-				action.unban({'ip': IPAddr('192.0.2.1')})
-				# test ban ip6 :
-				logSys.debug('# === ban ipv6 ==='); self.pruneLog()
-				action.ban({'ip': IPAddr('2001:DB8::')})
-				# test unban ip6 :
-				logSys.debug('# === unban ipv6 ==='); self.pruneLog()
-				action.unban({'ip': IPAddr('2001:DB8::')})
-				# test stop :
-				logSys.debug('# === stop ==='); self.pruneLog()
-				action.stop()
+	def _testExecActions(self, server, jail):
+		if not isinstance(jail, Jail):
+			jail = server._Server__jails[jail]
+		for a in jail.actions:
+			action = jail.actions[a]
+			logSys.debug('# ' + ('=' * 50))
+			logSys.debug('# == %-44s ==', jail.name + ' - ' + action._name)
+			logSys.debug('# ' + ('=' * 50))
+			# we can currently test only command actions:
+			if not isinstance(action, _actions.CommandAction): continue
+			# wrap default command processor, just log if (heavy)debug:
+			action.executeCmd = self._executeCmd
+			# test start :
+			logSys.debug('# === start ==='); self.pruneLog()
+			action.start()
+			# test ban ip4 :
+			logSys.debug('# === ban-ipv4 ==='); self.pruneLog()
+			action.ban({'ip': IPAddr('192.0.2.1')})
+			# test unban ip4 :
+			logSys.debug('# === unban ipv4 ==='); self.pruneLog()
+			action.unban({'ip': IPAddr('192.0.2.1')})
+			# test ban ip6 :
+			logSys.debug('# === ban ipv6 ==='); self.pruneLog()
+			action.ban({'ip': IPAddr('2001:DB8::')})
+			# test unban ip6 :
+			logSys.debug('# === unban ipv6 ==='); self.pruneLog()
+			action.unban({'ip': IPAddr('2001:DB8::')})
+			# test stop :
+			logSys.debug('# === stop ==='); self.pruneLog()
+			action.stop()
 
 	if STOCK:
 
@@ -1080,7 +1079,8 @@ class ServerConfigReaderTests(LogCaptureTestCase):
 
 			# test default stock actions sepecified in all stock jails:
 			if not unittest.F2B.fast:
-				self._testExecActions(server)
+				for jail in server._Server__jails.itervalues():
+					self._testExecActions(server, jail)
 
 		def getDefaultJailStream(self, jail, act):
 			act = act.replace('%(__name__)s', jail)
@@ -1098,7 +1098,6 @@ class ServerConfigReaderTests(LogCaptureTestCase):
 			return stream
 
 		def testCheckStockAllActions(self):
-			unittest.F2B.SkipIfFast()
 			import glob
 
 			server = TestServer()
@@ -1106,6 +1105,7 @@ class ServerConfigReaderTests(LogCaptureTestCase):
 
 			for actCfg in glob.glob(os.path.join(CONFIG_DIR, 'action.d', '*.conf')):
 				act = os.path.basename(actCfg).replace('.conf', '')
+				if act.endswith('-common'): continue
 				# transmit artifical jail with each action to the server:
 				stream = self.getDefaultJailStream('j-'+act, act)
 				for cmd in stream:
@@ -1113,7 +1113,8 @@ class ServerConfigReaderTests(LogCaptureTestCase):
 					ret, res = transm.proceed(cmd)
 					self.assertEqual(ret, 0)
 				# test executing action commands:
-				self._testExecActions(server)
+				if not unittest.F2B.fast:
+					self._testExecActions(server, 'j-'+act)
 
 
 		def testCheckStockCommandActions(self):
