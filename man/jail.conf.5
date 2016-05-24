@@ -176,13 +176,16 @@ Ensure syslog or the program that generates the log file isn't configured to com
 .B logencoding
 encoding of log files used for decoding. Default value of "auto" uses current system locale.
 .TP
+.B actiontype
+type of the banning action (default <multiport>) typically specified in the \fI[DEFAULT]\fR section for all jails.
+.br
+This parameter will be used by the substitution of \fIbanaction\fR and can be redefined central in the \fI[DEFAULT]\fR section inside \fIjail.local\fR (to apply it to all jails at once) or separately in each jail, where this substitution will be used.
+Currently supported values: <multiport>, <allports> or any custom parameters of corresponding action
+.TP
 .B banaction
-banning action (default iptables-multiport) typically specified in the \fI[DEFAULT]\fR section for all jails.
+banning action (default iptables[actiontype=<multiport>]) typically specified in the \fI[DEFAULT]\fR section for all jails.
 .br
 This parameter will be used by the standard substitution of \fIaction\fR and can be redefined central in the \fI[DEFAULT]\fR section inside \fIjail.local\fR (to apply it to all jails at once) or separately in each jail, where this substitution will be used.
-.TP
-.B banaction_allports
-the same as \fIbanaction\fR but for some "allports" jails like "pam-generic" or "recidive" (default iptables-allports).
 .TP
 .B action
 action(s) from \fI/etc/fail2ban/action.d/\fR without the \fI.conf\fR/\fI.local\fR extension.
