@@ -32,6 +32,9 @@ install:
   - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then travis_retry sudo apt-get install -qq python-gamin && cp /usr/share/pyshared/gamin.py /usr/lib/pyshared/python2.7/_gamin.so $VIRTUAL_ENV/lib/python2.7/site-packages/; fi
   #   pyinotify
   - travis_retry pip install pyinotify
+  #   systemd
+  - if [[ $TRAVIS_PYTHON_VERSION == 2.7 ]]; then pip install python-systemd; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then pip3 install python3-systemd; fi
 before_script:
   # Manually execute 2to3 for now
   - if [[ "$F2B_PY_3" ]]; then ./fail2ban-2to3; fi
