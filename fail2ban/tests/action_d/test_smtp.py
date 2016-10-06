@@ -19,6 +19,7 @@
 
 import os
 import smtpd
+import smtplib
 import threading
 import unittest
 import sys
@@ -29,7 +30,7 @@ else:
 
 from ..dummyjail import DummyJail
 
-from ..utils import CONFIG_DIR, asyncserver
+from ..utils import logging, logSys, Utils, CONFIG_DIR, asyncserver
 
 
 class TestSMTPServer(smtpd.SMTPServer):
@@ -58,15 +59,33 @@ class SMTPActionTest(unittest.TestCase):
 		self.smtpd = TestSMTPServer(("localhost", 0), None)
 		port = self.smtpd.socket.getsockname()[1]
 
+		host = "127.0.0.1:%i" % port
 		self.action = customActionModule.Action(
-			self.jail, "test", host="127.0.0.1:%i" % port)
+			self.jail, "test", host=host)
 
 		## because of bug in loop (see loop in asyncserver.py) use it's loop instead of asyncore.loop:
 		self._active = True
 		self._loop_thread = threading.Thread(
-			target=asyncserver.loop, kwargs={'active': lambda: self._active})
+			target=asyncserver.loop, 
+			kwargs={'active': lambda: self._active, 'timeout': Utils.DEFAULT_SLEEP_INTERVAL})
 		self._loop_thread.daemon = True
 		self._loop_thread.start()
+		## wait for smpt ready:
+		_e = {}
+		def _smtp_ready():
+			smtp=smtplib.SMTP()
+			ret = False
+			try:
+				smtp.connect(host)
+				ret = True
+			except Exception as e:
+				_e['error'] = e
+			finally:
+				if ret:
+					smtp.quit()
+			return ret
+		if not Utils.wait_for(_smtp_ready, 5): # pragma: no cover
+			logSys.error('Waiting for test smtp server failed: %s', _e['error'])
 
 	def tearDown(self):
 		"""Call after every test case."""
