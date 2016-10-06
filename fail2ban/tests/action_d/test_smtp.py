@@ -86,6 +86,7 @@ class SMTPActionTest(unittest.TestCase):
 			return ret
 		if not Utils.wait_for(_smtp_ready, 5): # pragma: no cover
 			logSys.error('Waiting for test smtp server failed: %s', _e['error'])
+		logSys.debug('test smtp server ready on %r', host)
 
 	def tearDown(self):
 		"""Call after every test case."""
